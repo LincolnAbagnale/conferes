@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Conferes</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0b0d10;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+body{font-family:Roboto,"Segoe UI",Arial,sans-serif;color:#e7e9ec}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:800px;transform-origin:center center;background:#111418;padding:14px 24px;display:flex;flex-direction:column;gap:10px;white-space:nowrap;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.clk{cursor:pointer}
+
+/* topo */
+.top{display:flex;align-items:center;gap:14px;height:40px}
+.title{font-size:24px;font-weight:700}
+.date{font-size:20px;color:#c3c9d0}
+.date.past{color:#f5c04a}
+.badge{font-size:14px;background:#3d3112;color:#f5c04a;padding:4px 10px;border-radius:6px}
+.btn{height:34px;padding:0 14px;border-radius:8px;background:#232a33;font-size:16px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:#2c3540}
+.bar{flex:1;height:10px;background:#22272e;border-radius:5px;overflow:hidden;margin:0 4px}
+.bar>i{display:block;height:100%;background:#22a55a;border-radius:5px;transition:width .2s}
+.cnt{font-size:19px;font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
+.clock{font-size:19px;color:#8b95a1;font-variant-numeric:tabular-nums}
+
+/* lojas */
+.row{display:flex;align-items:center;height:43px}
+.row.h{height:22px;color:#8b95a1;font-size:13px;font-weight:700}
+.num{width:30px;color:#6b7580;font-size:17px}
+.sig{width:60px;font-size:23px;font-weight:700}
+.cnpj{width:270px;height:37px;display:inline-flex;align-items:center;gap:8px;background:#1b2636;color:#e7e9ec;border-radius:8px;padding:0 12px;font-size:20px;font-variant-numeric:tabular-nums;flex:none}
+.cnpj:hover{background:#22324a}
+.cnpj:active{background:#2d4a72}
+.cnpj b{color:#6ea2ff;font-weight:400}
+.cnpj svg{flex:none;opacity:.7}
+.arr{width:16px;text-align:center;color:#4a525c;font-size:17px;flex:none}
+.cb{width:36px;height:36px;margin-right:5px;border-radius:7px;border:2px solid #3a4048;display:inline-flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex:none;cursor:pointer;transition:background .1s}
+.cb:hover{border-color:#5a636e}
+.cb.v2{background:#4a2326;border-color:#6e2f35;color:#ff9b9b}
+.cb.none{border:0;cursor:default}
+.cb.auto{cursor:pointer;border-style:dashed}
+.hd{width:36px;margin-right:5px;text-align:center;flex:none}
+.cx{width:258px;font-size:17px;color:#c3c9d0;overflow:hidden;text-overflow:ellipsis;padding-left:6px}
+.cxb{width:292px;height:37px;margin-right:8px;display:inline-flex;align-items:center;gap:8px;background:#1b2636;border-radius:8px;padding:0 10px;text-align:left;flex:none}
+.cxb:hover{background:#22324a}
+.cxb:active{background:#2d4a72}
+.cxb svg{flex:none;opacity:.7}
+.cxb span{overflow:hidden;text-overflow:ellipsis}
+.rede{width:54px;text-align:center;background:#3a2a1c;color:#f5b27a;border-radius:6px;font-size:18px;font-weight:700;padding:5px 0}
+.rede.hd2{background:none;color:#f07a2c;font-size:13px;padding:0}
+
+/* abas */
+.tabs{display:flex;align-items:center;gap:6px;border-top:1px solid #22272e;padding-top:8px;height:42px}
+.tab{padding:6px 16px;border-radius:8px;font-size:17px;color:#8b95a1}
+.tab.on{background:#232a33;color:#fff}
+.mnav{display:flex;align-items:center;gap:4px;font-size:17px;color:#c3c9d0;margin-left:14px}
+.mnav button{width:32px;height:32px;border-radius:6px;font-size:18px}
+.mnav button:hover{background:#232a33}
+.sp{flex:1}
+.hint{font-size:13px;color:#6b7580}
+
+/* mês */
+.panel{flex:1;min-height:0}
+.mg{display:grid;grid-template-columns:72px repeat(31,26px) 1fr;column-gap:3px;row-gap:2px;align-items:center}
+.dh{height:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:5px;cursor:pointer;line-height:1.05}
+.dh small{font-size:10px;color:#6b7580}
+.dh span{font-size:13px;color:#a7b0ba;font-weight:700}
+.dh:hover{background:#1c2229}
+.dh.today{background:#e8b21c}.dh.today span,.dh.today small{color:#111}
+.dh.view{outline:2px solid #6ea2ff;outline-offset:-2px}
+.rl{font-size:13px;font-weight:700;color:#c3c9d0}
+.rl.conf{color:#7fb0ff}
+.mc{width:26px;height:25px;border-radius:5px;border:1.5px solid #333a42;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;cursor:pointer;position:relative}
+.mc:hover{border-color:#56606b}
+.mc.v2{background:#4a2326;border-color:#6e2f35;color:#ff9b9b}
+.mc.man::after{content:"";position:absolute;right:1px;top:1px;width:5px;height:5px;border-radius:50%;background:#fff;opacity:.85}
+.mc.fut{opacity:.45}
+.mc.off{visibility:hidden}
+.pc{display:flex;align-items:center;gap:8px;padding-left:10px}
+.pc i{display:block;width:64px;height:12px;background:#22272e;border-radius:3px;overflow:hidden}
+.pc i b{display:block;height:100%;background:#3b7be0}
+.pc span{font-size:15px;font-variant-numeric:tabular-nums;width:44px;text-align:right}
+
+/* conversores */
+.cvw{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.cvh{font-weight:700;font-size:17px;padding:6px 12px;border-radius:6px;margin-bottom:2px}
+.cv{display:flex;align-items:center;gap:12px;height:38px;font-size:19px;border-bottom:1px solid #1d2228}
+.cv .cb{width:30px;height:30px;font-size:19px;margin:0}
+.cv .lb{flex:1;width:auto;height:32px;font-size:18px;margin:0;color:#e7e9ec}
+.ulw{display:inline-flex;align-items:center;gap:6px;color:#8b95a1;font-size:15px;flex:none}
+.ulin{width:74px;height:32px;background:#161b21;border:1.5px solid #333a42;border-radius:6px;color:#e7e9ec;font:inherit;font-size:17px;text-align:center;font-variant-numeric:tabular-nums;-webkit-user-select:text;user-select:text;outline:none}
+.ulin:focus{border-color:#6ea2ff;background:#1b2636}
+.cv .rede{font-size:16px;padding:2px 0}
+
+/* menu e toast */
+#menu{position:absolute;right:24px;top:58px;background:#1c2229;border:1px solid #2e3640;border-radius:10px;padding:6px;display:none;flex-direction:column;min-width:240px;z-index:5}
+#menu.on{display:flex}
+#menu button{text-align:left;padding:10px 12px;border-radius:6px;font-size:16px}
+#menu button:hover{background:#2a323c}
+#menu hr{border:0;border-top:1px solid #2e3640;margin:4px 0}
+.sdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#5b6470}
+.sdot.ok{background:#22a55a}.sdot.pend{background:#e8b21c}.sdot.err{background:#e5484d}
+#syncbtn{font-size:14px;color:#8b95a1}
+#login{position:absolute;inset:0;background:rgba(5,7,10,.7);display:none;align-items:center;justify-content:center;z-index:8}
+#login.on{display:flex}
+.lbox{width:460px;background:#1c2229;border:1px solid #2e3640;border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.lbox input{height:46px;background:#111418;border:1.5px solid #333a42;border-radius:8px;color:#e7e9ec;font:inherit;font-size:18px;padding:0 14px;-webkit-user-select:text;user-select:text;outline:none}
+.lbox input:focus{border-color:#6ea2ff}
+.btn.pri{background:#3b7be0;color:#fff}
+#toast{position:absolute;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:#e7e9ec;color:#111;font-size:18px;font-weight:700;padding:10px 20px;border-radius:10px;opacity:0;transition:.2s;pointer-events:none;z-index:9}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="top" id="top"></div>
+  <div id="lojas"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="panel" id="panel"></div>
+  <div id="menu">
+    <button data-a="fs">⛶ Tela cheia</button>
+    <button data-a="sync">⟳ Sincronização</button>
+    <hr>
+    <button data-a="exp">⭳ Exportar backup (.json)</button>
+    <button data-a="imp">⭱ Importar backup</button>
+    <hr>
+    <button data-a="clr">Limpar marcações deste dia</button>
+  </div>
+  <div id="toast"></div>
+  <div id="login">
+    <div class="lbox">
+      <div style="display:flex;align-items:center;gap:10px"><b style="font-size:22px">Sincronização</b><span class="sp"></span><button class="btn" id="lclose">✕</button></div>
+      <p id="lmsg" style="font-size:15px;color:#8b95a1;white-space:normal;line-height:1.4"></p>
+      <div id="lform" style="display:flex;flex-direction:column;gap:10px">
+        <input id="lemail" type="email" placeholder="seu@email.com" autocomplete="username">
+        <input id="lpass" type="password" placeholder="senha" autocomplete="current-password">
+        <div style="display:flex;gap:10px"><button class="btn pri" id="lin">Entrar</button><button class="btn" id="lup">Criar conta</button></div>
+      </div>
+      <div id="lout" style="display:none;gap:10px"><button class="btn" id="lnow">⟳ Sincronizar agora</button><button class="btn" id="lexit">Sair desta conta</button></div>
+    </div>
+  </div>
+  <input type="file" id="file" accept="application/json,.json" hidden>
+</div>
+
+<script>
+/* ======== DADOS FIXOS ======== */
+const LOJAS = [
+  {s:'PER', n:'Pernambuco', cnpj:'37.901.344/0001-81', cx:'1.2.0 Pernambuco - Caixa Loja', rede:'056', skip:[]},
+  {s:'NOR', n:'Norte',      cnpj:'44.037.974/0001-15', cx:'2.2.0 Norte - Caixa Loja',      rede:'170', skip:[]},
+  {s:'BOU', n:'Boulevard',  cnpj:'37.901.344/0002-62', cx:'3.2.0 Boulevard - Caixa Loja',  rede:'097', skip:[]},
+  {s:'APU', n:'Apucarana',  cnpj:'57.022.273/0001-54', cx:'4.2.0 Apucarana - Caixa Loja',  rede:'401', skip:[]},
+  {s:'ARA', n:'Arapongas',  cnpj:'60.131.533/0001-34', cx:'5.2.0 Arapongas - Caixa Loja',  rede:'754', skip:[]},
+  {s:'SAU', n:'Saul',       cnpj:'65.985.270/0001-44', cx:'6.2.0 Saul - Caixa Loja',       rede:'630', skip:[]},
+  {s:'CAT', n:'Catuaí',     cnpj:'68.949.231/0001-80', cx:'7.2.0 Catuaí - Caixa Loja',     rede:'-',   skip:['RE','C6','CR']},
+];
+// colunas de cima  (k = chave, c = cor, row = linha correspondente na grade do mês, mc = cor na grade do mês)
+const COLS = [
+  {k:'HT',  t:'Html',               c:'#22a55a', row:'HTML',  mc:'#22a55a'},
+  {k:'RE',  t:'Rede',               c:'#f07a2c', row:'RV.RE', mc:'#22a55a'},
+  {k:'PB',  t:'Pagbank',            c:'#e0a800', row:'RV.PB', mc:'#22a55a'},
+  {k:'C6',  t:'Banco C6',           c:'#64748b', row:'RV.C6', mc:'#22a55a'},
+  {k:'EPX', t:'Extrato PIX C6',     c:'#22a55a', row:'E.PIX', mc:'#22a55a'},
+  {k:'C',   t:'Caixa conferido',    c:'#3b7be0', row:'CONF',  mc:'#3b7be0'},
+  {k:'DE',  t:'Depósitos',          c:'#22a55a', row:'DEP',   mc:'#22a55a'},
+  {k:'D$',  t:'Dinheiro',           c:'#22a55a', row:'DIN$',  mc:'#22a55a'},
+  {k:'SA',  t:'Sangrias',           c:'#22a55a', row:'SANG',  mc:'#22a55a'},
+  {k:'CP',  t:'Conversor PagBank',  c:'#e0a800', row:'CONPB', mc:'#e0a800', auto:'PB'},
+  {k:'CR',  t:'Conversor REDE',     c:'#f07a2c', row:'CONRE', mc:'#f07a2c', auto:'IT'},
+];
+const HEADC = {RE:'#f07a2c',PB:'#e0a800',C6:'#c3c9d0',C:'#7fb0ff',CP:'#e0a800',CR:'#f07a2c'};
+const CONV = {
+  PB: LOJAS.map((l,i)=>({i, t:`${i+1}.3.6 ${l.n} - Pagbank`})),
+  IT: LOJAS.map((l,i)=>({i, t:`${i+1}.1.8 ${l.n} - Itau`, rede:l.rede})).filter(x=>!LOJAS[x.i].skip.includes('CR')),
+};
+const WD = ['dom.','seg.','ter.','qua.','qui.','sex.','sáb.'];
+const WDL = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+
+/* ======== ESTADO ======== */
+const KEY = 'conferes.v1';
+let S = {days:{}, tab:'mes'};
+try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && j.days) S = Object.assign(S, j); } catch(e){}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+
+const pad = n => String(n).padStart(2,'0');
+const dk = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const pk = k => { const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d); };
+let today = dk(new Date());
+let view = today;                       // dia sendo editado em cima
+let month = view.slice(0,7);            // mês mostrado embaixo (YYYY-MM)
+
+const day = k => S.days[k] || (S.days[k] = {t:{}, c:{}, m:{}});
+const peek = k => S.days[k];
+
+/* valor de uma célula de cima: 0 vazio, 1 ✓, 2 ✗ */
+function topVal(k, r, col){
+  const c = COLS.find(x=>x.k===col);
+  const d = peek(k); if (!d) return 0;
+  if (c.auto) return (d.c||{})[`${c.auto}-${r}`] || 0;
+  return (d.t||{})[`${r}-${col}`] || 0;
+}
+/* valor derivado de uma linha do mês num dia */
+function derived(k, col){
+  const vals = [];
+  LOJAS.forEach((l,r)=>{ if(!l.skip.includes(col)) vals.push(topVal(k,r,col)); });
+  if (vals.every(v=>v>0)) return vals.some(v=>v===1) ? 1 : 2;
+  return 0;
+}
+function monthVal(k, c){
+  const d = peek(k);
+  if (d && d.m && d.m[c.row] !== undefined) return {v:d.m[c.row], man:true};
+  return {v:derived(k, c.k), man:false};
+}
+function lastDone(conv, i, upto){
+  const ks = Object.keys(S.days).filter(k=>k<=upto).sort().reverse();
+  for (const k of ks) if ((S.days[k].c||{})[`${conv}-${i}`] === 1) { const [y,m,d] = k.split('-'); return `${d}/${m}`; }
+  return '—';
+}
+function cleanup(k){
+  const d = S.days[k]; if (!d) return;
+  if (!Object.keys(d.t).length && !Object.keys(d.c).length && !Object.keys(d.m).length) delete S.days[k];
+}
+
+/* ======== RENDER ======== */
+const $ = id => document.getElementById(id);
+const CHECK = v => v===1 ? '✓' : v===2 ? '✕' : '';
+const cbStyle = (v,color) => v===1 ? `background:${color};border-color:${color}` : '';
+const COPY_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+
+function cnpjHTML(l){
+  // destaca a parte final quando duas lojas compartilham a mesma raiz (igual na planilha)
+  const root = l.cnpj.slice(0,10);
+  const shared = LOJAS.filter(x=>x.cnpj.slice(0,10)===root).length > 1;
+  if (!shared) return l.cnpj;
+  return l.cnpj.slice(0,14) + '<b>' + l.cnpj.slice(14) + '</b>';
+}
+
+function renderTop(){
+  const d = pk(view);
+  let done=0, tot=0;
+  LOJAS.forEach((l,r)=>COLS.forEach(c=>{ if(!l.skip.includes(c.k)){ tot++; if(topVal(view,r,c.k)>0) done++; } }));
+  const past = view !== today;
+  $('top').innerHTML =
+    `<span class="title">Conferes</span>
+     <span class="date ${past?'past':''}">${WDL[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth()+1)}</span>
+     ${past?`<span class="badge">editando outro dia</span><button class="btn" data-a="hoje">↩ Hoje</button>`:''}
+     <div class="bar"><i style="width:${tot?done/tot*100:0}%"></i></div>
+     <span class="cnt">${done} / ${tot}</span>
+     <span class="clock" id="clock"></span>
+     <button class="btn" data-a="sync" id="syncbtn" title="Sincronização"><i class="sdot ${Sync.state}"></i>${Sync.label()}</button>
+     <button class="btn" data-a="menu" aria-label="Menu">☰</button>`;
+  tick();
+}
+
+function renderLojas(){
+  let h = `<div class="row h"><span class="num"></span><span class="sig"></span><span style="width:270px;padding-left:4px">CNPJ · toque para copiar</span><span class="arr"></span>`;
+  COLS.forEach((c,i)=>{
+    if (i===6||i===9) h += `<span class="arr"></span>`;
+    h += `<span class="hd" title="${c.t}" style="color:${HEADC[c.k]||'#c3c9d0'}">${c.k}</span>`;
+  });
+  h += `<span class="arr"></span><span class="cx" style="font-size:13px;color:#8b95a1;width:300px">Caixa loja · toque para copiar</span><span class="rede hd2">REDE</span></div>`;
+  LOJAS.forEach((l,r)=>{
+    h += `<div class="row"><span class="num">${r+1}</span><span class="sig">${l.s}</span>
+      <button class="cnpj" data-a="copy" data-v="${l.cnpj}">${COPY_SVG}<span>${cnpjHTML(l)}</span></button><span class="arr">→</span>`;
+    COLS.forEach((c,i)=>{
+      if (i===6) h += `<span class="arr">→</span>`;
+      if (i===9) h += `<span class="arr">│</span>`;
+      if (l.skip.includes(c.k)) { h += `<span class="cb none"></span>`; return; }
+      const v = topVal(view,r,c.k);
+      if (c.auto) h += `<span class="cb auto v${v}" style="${cbStyle(v,c.c)}" data-a="goconv" title="${c.t}: marcado pelos conversores">${CHECK(v)}</span>`;
+      else        h += `<span class="cb v${v}" style="${cbStyle(v,c.c)}" data-a="top" data-r="${r}" data-c="${c.k}" title="${c.t}">${CHECK(v)}</span>`;
+    });
+    h += `<span class="arr"></span><button class="cx cxb" data-a="copy" data-v="${l.cx}">${COPY_SVG}<span>${l.cx}</span></button><span class="rede">${l.rede}</span></div>`;
+  });
+  $('lojas').innerHTML = h;
+}
+
+function renderTabs(){
+  const [y,m] = month.split('-').map(Number);
+  $('tabs').innerHTML =
+    `<button class="tab ${S.tab==='mes'?'on':''}" data-a="tab" data-v="mes">Mês</button>
+     <button class="tab ${S.tab==='conv'?'on':''}" data-a="tab" data-v="conv">Conversores</button>
+     ${S.tab==='mes'?`<div class="mnav"><button data-a="mprev">‹</button><span style="width:150px;text-align:center">${MES[m-1]} ${y}</span><button data-a="mnext">›</button></div>`:''}
+     <span class="sp"></span>
+     <span class="hint">${S.tab==='mes'
+        ? 'toque no número do dia para abrir aquele dia em cima · ponto branco = alterado à mão'
+        : `marcações do dia ${view.slice(8)}/${view.slice(5,7)} · ✓ marca CP / CR da loja`}</span>`;
+}
+
+function renderMes(){
+  const [y,m] = month.split('-').map(Number);
+  const dim = new Date(y, m, 0).getDate();
+  let h = `<div class="mg"><span></span>`;
+  for (let i=1;i<=31;i++){
+    if (i>dim){ h += `<span></span>`; continue; }
+    const k = `${month}-${pad(i)}`, wd = new Date(y,m-1,i).getDay();
+    h += `<div class="dh ${k===today?'today':''} ${k===view?'view':''}" data-a="view" data-v="${k}"><small>${WD[wd]}</small><span>${i}</span></div>`;
+  }
+  h += `<span></span>`;
+  COLS.forEach(c=>{
+    h += `<span class="rl ${c.row==='CONF'?'conf':''}">${c.row}</span>`;
+    let cnt = 0;
+    for (let i=1;i<=31;i++){
+      if (i>dim){ h += `<span class="mc off"></span>`; continue; }
+      const k = `${month}-${pad(i)}`;
+      const {v, man} = monthVal(k, c);
+      if (v>0) cnt++;
+      h += `<span class="mc v${v} ${man?'man':''} ${k>today?'fut':''}" style="${cbStyle(v,c.mc)}" data-a="mc" data-k="${k}" data-row="${c.row}" data-c="${c.k}">${CHECK(v)}</span>`;
+    }
+    const p = Math.round(cnt/dim*100);
+    h += `<div class="pc"><i><b style="width:${p}%"></b></i><span>${p}%</span></div>`;
+  });
+  $('panel').innerHTML = h + `</div>`;
+}
+
+function renderConv(){
+  const col = (key, title, bg, fg) => {
+    let h = `<div><div class="cvh" style="background:${bg};color:${fg}">${title}</div>`;
+    CONV[key].forEach(x=>{
+      const v = (peek(view)?.c||{})[`${key}-${x.i}`] || 0;
+      const color = key==='PB' ? '#e0a800' : '#f07a2c';
+      const uk = `${key}-${x.i}`;
+      const ul = (S.ult && S.ult[uk] !== undefined) ? S.ult[uk] : lastDone(key,x.i,view).replace('—','');
+      h += `<div class="cv"><span class="cb v${v}" style="${cbStyle(v,color)}" data-a="conv" data-k="${key}" data-i="${x.i}">${CHECK(v)}</span>
+        <button class="lb cxb" data-a="copy" data-v="${x.t}">${COPY_SVG}<span>${x.t}</span></button>
+        <span class="ulw">últ.<input class="ulin" data-u="${uk}" value="${ul}" inputmode="numeric" maxlength="5" placeholder="dd/mm"></span>${x.rede?`<span class="rede">${x.rede}</span>`:''}</div>`;
+    });
+    return h + `</div>`;
+  };
+  $('panel').innerHTML = `<div class="cvw">${col('PB','PAGBANK  →  marca CP','#e0a800','#2a1e00')}${col('IT','REDE · ITAÚ  →  marca CR','#f07a2c','#2a1200')}</div>`;
+}
+
+function render(){
+  renderTop(); renderLojas(); renderTabs();
+  S.tab==='conv' ? renderConv() : renderMes();
+}
+
+/* ======== AÇÕES ======== */
+const next = v => (v+1)%3;   // vazio → ✓ → ✕ → vazio
+
+function toast(t){
+  const e = $('toast'); e.textContent = t; e.classList.add('on');
+  clearTimeout(toast.t); toast.t = setTimeout(()=>e.classList.remove('on'), 1300);
+}
+async function copy(txt){
+  let ok = false;
+  try { if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(txt); ok = true; } } catch(e){}
+  if (!ok){
+    const ta = document.createElement('textarea'); ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch(e){} ta.remove();
+  }
+  toast(ok ? `Copiado: ${txt}` : 'Não deu para copiar');
+}
+function fullscreen(){
+  const el = document.documentElement;
+  if (!document.fullscreenElement) (el.requestFullscreen||el.webkitRequestFullscreen||(()=>{})).call(el);
+  else (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+}
+
+document.addEventListener('click', e=>{
+  const t = e.target.closest('[data-a]');
+  const menu = $('menu');
+  if (!t){ menu.classList.remove('on'); return; }
+  const a = t.dataset.a;
+  if (a!=='menu' && !menu.contains(t)) menu.classList.remove('on');
+
+  if (a==='copy') return copy(t.dataset.v);
+  if (a==='sync'){ menu.classList.remove('on'); return Sync.open(); }
+  let touched = [];
+  if (a==='top'){
+    const d = day(view), key = `${t.dataset.r}-${t.dataset.c}`, v = next(d.t[key]||0);
+    if (v) d.t[key] = v; else delete d.t[key];
+    touched = [view];
+  }
+  else if (a==='conv'){
+    const d = day(view), key = `${t.dataset.k}-${t.dataset.i}`, v = next(d.c[key]||0);
+    if (v) d.c[key] = v; else delete d.c[key];
+    touched = [view];
+    if (v === 1) { S.ult = S.ult || {}; S.ult[key] = `${view.slice(8)}/${view.slice(5,7)}`; touched.push('_ult'); }  // ✓ preenche a data; dá pra digitar outra
+  }
+  else if (a==='mc'){
+    const k = t.dataset.k, row = t.dataset.row, c = COLS.find(x=>x.row===row);
+    const cur = monthVal(k, c).v, der = derived(k, c.k), v = next(cur);
+    const d = day(k);
+    if (v === der) delete d.m[row]; else d.m[row] = v;   // voltou ao automático → tira a marca manual
+    cleanup(k);
+    touched = [k];
+  }
+  else if (a==='view'){ view = t.dataset.v; }
+  else if (a==='hoje'){ view = today; month = today.slice(0,7); }
+  else if (a==='tab'){ S.tab = t.dataset.v; }
+  else if (a==='goconv'){ S.tab = 'conv'; }
+  else if (a==='mprev' || a==='mnext'){
+    let [y,m] = month.split('-').map(Number); m += a==='mprev'?-1:1;
+    if (m<1){m=12;y--;} if (m>12){m=1;y++;}
+    month = `${y}-${pad(m)}`;
+  }
+  else if (a==='menu'){ menu.classList.toggle('on'); return; }
+  else if (a==='fs'){ fullscreen(); menu.classList.remove('on'); return; }
+  else if (a==='exp'){
+    const blob = new Blob([JSON.stringify(S,null,1)], {type:'application/json'});
+    const u = URL.createObjectURL(blob), l = document.createElement('a');
+    l.href = u; l.download = `conferes-backup-${today}.json`; document.body.appendChild(l); l.click(); l.remove();
+    setTimeout(()=>URL.revokeObjectURL(u), 2000); menu.classList.remove('on'); return;
+  }
+  else if (a==='imp'){ $('file').click(); menu.classList.remove('on'); return; }
+  else if (a==='clr'){
+    if (confirm(`Limpar todas as marcações de ${view.slice(8)}/${view.slice(5,7)}?`)) { delete S.days[view]; touched = [view]; }
+    menu.classList.remove('on');
+  }
+  if (S.days[view]) cleanup(view);
+  touched.forEach(k=>Sync.touch(k));
+  save(); render();
+});
+
+/* datas digitáveis dos conversores: só números, barra automática */
+document.addEventListener('input', e=>{
+  const t = e.target; if (!t.classList || !t.classList.contains('ulin')) return;
+  let n = t.value.replace(/\D/g,'').slice(0,4);
+  t.value = n.length > 2 ? n.slice(0,2) + '/' + n.slice(2) : n;
+  S.ult = S.ult || {}; S.ult[t.dataset.u] = t.value; Sync.touch('_ult'); save();
+});
+document.addEventListener('keydown', e=>{ if (e.key==='Enter' && e.target.classList && e.target.classList.contains('ulin')) e.target.blur(); });
+
+$('file').addEventListener('change', async e=>{
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text());
+    if (!j.days) throw 0;
+    S = Object.assign({days:{}, tab:'mes'}, j, {dirty:{}});
+    Object.keys(S.days).forEach(k=>Sync.touch(k)); Sync.touch('_ult');
+    save(); render(); toast('Backup importado');
+  } catch(_) { toast('Arquivo inválido'); }
+  e.target.value = '';
+});
+
+/* ======== SINCRONIZAÇÃO (Supabase) ======== */
+// Cada dia é uma linha na tabela "conferes" (k = 'AAAA-MM-DD'); as datas dos conversores ficam na linha k = '_ult'.
+// Funciona offline: o que muda fica marcado como pendente (S.dirty) e é enviado quando a conexão volta.
+function renderSafe(){
+  const a = document.activeElement;
+  if (a && a.tagName === 'INPUT') return;   // não atrapalhar quem está digitando
+  render();
+}
+const Sync = (()=>{
+  const cfg = window.CONFERES_CFG || {};
+  const on = !!(cfg.url && cfg.key && window.supabase);
+  let sb = null, user = null, timer = null, chan = null, busy = false;
+  S.dirty = S.dirty || {};
+  const api = {state:'off'};
+  api.label = () => !on ? 'local' : !user ? 'entrar' :
+    api.state==='ok' ? 'sincronizado' : api.state==='pend' ? 'enviando…' : api.state==='err' ? 'sem conexão' : '…';
+  function set(st){
+    api.state = st;
+    const b = document.getElementById('syncbtn');
+    if (b) b.innerHTML = `<i class="sdot ${st}"></i>${api.label()}`;
+  }
+  const payload = k => k==='_ult' ? (S.ult||{}) : (S.days[k]||{});
+  function apply(row){
+    const ts = Date.parse(row.updated_at);
+    if (S.dirty[row.k] && S.dirty[row.k] >= ts) return false;      // a versão local é mais nova
+    delete S.dirty[row.k];
+    const before = JSON.stringify(payload(row.k));
+    if (row.k === '_ult') S.ult = row.data || {};
+    else if (!row.data || !Object.keys(row.data).length) delete S.days[row.k];
+    else S.days[row.k] = Object.assign({t:{}, c:{}, m:{}}, row.data);
+    return before !== JSON.stringify(payload(row.k));
+  }
+  api.touch = k => {
+    S.dirty[k] = Date.now();
+    if (on && user){ set('pend'); clearTimeout(timer); timer = setTimeout(flush, 500); }
+  };
+  async function flush(){
+    if (!on || !user || busy) return;
+    const ks = Object.keys(S.dirty);
+    if (!ks.length){ set('ok'); return; }
+    busy = true;
+    try {
+      const rows = ks.map(k=>({user_id:user.id, k, data:payload(k), updated_at:new Date(S.dirty[k]).toISOString()}));
+      const {error} = await sb.from('conferes').upsert(rows);
+      if (error) throw error;
+      rows.forEach(r=>{ if (S.dirty[r.k] === Date.parse(r.updated_at)) delete S.dirty[r.k]; });
+      save();
+      set(Object.keys(S.dirty).length ? 'pend' : 'ok');
+    } catch(e){ console.warn('sync flush', e); set('err'); }
+    busy = false;
+    if (Object.keys(S.dirty).length && api.state !== 'err'){ clearTimeout(timer); timer = setTimeout(flush, 500); }
+  }
+  async function pull(){
+    if (!on || !user) return;
+    try {
+      const {data, error} = await sb.from('conferes').select('k,data,updated_at');
+      if (error) throw error;
+      if (S.syncUser !== user.id){
+        // primeira vez neste aparelho: o que só existe aqui sobe, o que existe no servidor vale
+        const srv = new Set(data.map(r=>r.k));
+        Object.keys(S.days).forEach(k=>{ if (!srv.has(k)) S.dirty[k] = Date.now(); });
+        if (!srv.has('_ult') && S.ult && Object.keys(S.ult).length) S.dirty._ult = Date.now();
+        S.syncUser = user.id;
+      }
+      let changed = false;
+      data.forEach(r=>{ if (apply(r)) changed = true; });
+      save(); if (changed) renderSafe();
+      await flush();
+    } catch(e){ console.warn('sync pull', e); set('err'); }
+  }
+  function live(){
+    if (chan) sb.removeChannel(chan);
+    chan = sb.channel('conferes-' + user.id)
+      .on('postgres_changes', {event:'*', schema:'public', table:'conferes', filter:`user_id=eq.${user.id}`}, p=>{
+        if (p.new && p.new.k && apply(p.new)){ save(); renderSafe(); }
+      })
+      .subscribe(st=>{ if (st === 'SUBSCRIBED') pull(); });
+  }
+  function setUser(u){
+    if ((u && u.id) === (user && user.id)) return;
+    user = u;
+    if (user){ set('pend'); live(); pull(); }
+    else { if (chan) sb.removeChannel(chan); chan = null; set('off'); }
+  }
+  if (on){
+    sb = window.supabase.createClient(cfg.url, cfg.key, {auth:{persistSession:true, autoRefreshToken:true}});
+    sb.auth.getSession().then(({data})=>setUser(data.session ? data.session.user : null));
+    sb.auth.onAuthStateChange((ev, session)=>setUser(session ? session.user : null));
+    addEventListener('online', pull);
+    document.addEventListener('visibilitychange', ()=>{ if (document.visibilityState === 'visible') pull(); });
+    setInterval(pull, 60000);
+  }
+
+  /* tela de login */
+  const L = id => document.getElementById(id);
+  function paint(msg){
+    L('lform').style.display = on && !user ? 'flex' : 'none';
+    L('lout').style.display  = on && user ? 'flex' : 'none';
+    L('lmsg').textContent = msg || (!on
+      ? 'A sincronização ainda não foi configurada (arquivo config.js). Por enquanto o painel salva só neste aparelho.'
+      : user ? `Conectado como ${user.email}. O que você marcar aqui aparece no PC e no tablet.`
+             : 'Entre com a mesma conta no PC e no tablet para as marcações sincronizarem.');
+  }
+  api.open = () => { paint(); L('login').classList.add('on'); };
+  L('lclose').onclick = () => L('login').classList.remove('on');
+  L('lin').onclick = async () => {
+    paint('Entrando…');
+    const {error} = await sb.auth.signInWithPassword({email:L('lemail').value.trim(), password:L('lpass').value});
+    if (error) paint('Não deu certo: ' + (error.message.includes('Invalid') ? 'e-mail ou senha errados.' : error.message));
+    else { paint(); setTimeout(()=>L('login').classList.remove('on'), 700); }
+  };
+  L('lup').onclick = async () => {
+    paint('Criando conta…');
+    const {data, error} = await sb.auth.signUp({email:L('lemail').value.trim(), password:L('lpass').value});
+    if (error) paint('Não deu certo: ' + error.message);
+    else if (!data.session) paint('Conta criada. Abra o e-mail de confirmação que o Supabase mandou e depois toque em Entrar.');
+    else paint();
+  };
+  L('lexit').onclick = async () => { await sb.auth.signOut(); paint(); };
+  L('lnow').onclick = async () => { await pull(); paint(); toast(api.state === 'ok' ? 'Sincronizado' : 'Sem conexão'); };
+  return api;
+})();
+
+/* ======== RELÓGIO, VIRADA DO DIA E ESCALA ======== */
+function tick(){
+  const n = new Date(), c = $('clock');
+  if (c) c.textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+  const t = dk(n);
+  if (t !== today){
+    const wasToday = view === today;
+    today = t;
+    if (wasToday){ view = t; month = t.slice(0,7); }
+    render();
+  }
+}
+setInterval(tick, 20000);
+
+function fit(){
+  const s = Math.min(innerWidth/1280, innerHeight/800);
+  $('stage').style.transform = `translate(-50%,-50%) scale(${s})`;
+}
+addEventListener('resize', fit);
+fit(); render();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
