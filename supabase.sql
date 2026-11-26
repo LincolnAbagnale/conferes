@@ -12,8 +12,8 @@ alter table public.conferes enable row level security;
 drop policy if exists "conferes: só o dono" on public.conferes;
 create policy "conferes: só o dono" on public.conferes
   for all to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 -- tempo real (o que muda no PC aparece no tablet na hora)
 do $$ begin
